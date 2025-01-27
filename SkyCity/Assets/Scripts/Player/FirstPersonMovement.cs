@@ -32,6 +32,7 @@ public class FirstPersonMovement : MonoBehaviour
 
     [Header("Fly")]
     [SerializeField] private float flyingSpeed;
+    [SerializeField] private float flyingSprintMultiplier;
     private InputAction fly;
 
     [Header("Physics")]
@@ -47,7 +48,7 @@ public class FirstPersonMovement : MonoBehaviour
     // current variables
     private bool movementEnabled;
     private bool affectedByGravity;
-    private float currentSpeed;
+    [SerializeField] private float currentSpeed;
     private float speedMultiplier;
     private bool isSprinting;
 
@@ -58,6 +59,8 @@ public class FirstPersonMovement : MonoBehaviour
         jump.Enable();
         fly.Enable();
         sprint.Enable();
+
+        TeleportUI.OnOpenUI += OnOpenUI;
     }
 
     private void OnDisable()
@@ -67,6 +70,8 @@ public class FirstPersonMovement : MonoBehaviour
         jump.Disable();
         fly.Disable();
         sprint.Disable();
+
+        TeleportUI.OnOpenUI -= OnOpenUI;
     }
 
     private void Awake()
@@ -74,7 +79,7 @@ public class FirstPersonMovement : MonoBehaviour
         move = input.actions.FindAction("Move");
         look = input.actions.FindAction("Look");
         jump = input.actions.FindAction("Jump");
-        fly = input.actions.FindAction("Interact");
+        fly = input.actions.FindAction("Fly");
         sprint = input.actions.FindAction("Sprint");
     }
 
@@ -92,21 +97,22 @@ public class FirstPersonMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        RotatePlayer();
+        if(!movementEnabled) { return; }
 
+        RotatePlayer();
         OnUpdateState();
     }
 
     private void FixedUpdate()
     {
+        if (!movementEnabled) { return; }
+
         isGrounded = Physics.CheckBox(transform.position + transform.up * checkOffset, checkSize, Quaternion.identity, groundedLayers);
         MovePlayer();
     }
 
     private void MovePlayer()
     {
-        if (movementEnabled == false) { return; }
-
         Vector2 movementInput = move.ReadValue<Vector2>();
         Vector3 movement = camPoint.transform.right * movementInput.x + camPoint.transform.forward * movementInput.y;
         characterController.Move(movement * currentSpeed * Time.deltaTime);
@@ -132,11 +138,12 @@ public class FirstPersonMovement : MonoBehaviour
     }
 
     private void ChangeState(PlayerState _state) 
-    { 
+    {
         OnExitState();
 
         currentState = _state;
 
+        isSprinting = false;
         OnEnterState();
     }
 
@@ -174,7 +181,7 @@ public class FirstPersonMovement : MonoBehaviour
                     else
                     {
                         isSprinting = false;
-                        currentSpeed = speed / sprintMultiplier;
+                        currentSpeed = speed;
                     }
                 }
 
@@ -187,12 +194,12 @@ public class FirstPersonMovement : MonoBehaviour
                     if (!isSprinting)
                     {
                         isSprinting = true;
-                        currentSpeed = flyingSpeed * sprintMultiplier;
+                        currentSpeed = flyingSpeed * flyingSprintMultiplier;
                     }
                     else
                     {
                         isSprinting = false;
-                        currentSpeed = flyingSpeed / sprintMultiplier;
+                        currentSpeed = flyingSpeed;
                     }
                 }
 
@@ -223,6 +230,24 @@ public class FirstPersonMovement : MonoBehaviour
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
         }
+    }
+
+    private void OnOpenUI()
+    {
+        Debug.Log("Invoked open ui event");
+
+        if (movementEnabled) { DisablePlayer(); }
+        else { EnablePlayer(); }
+    }
+
+    private void EnablePlayer()
+    {
+        movementEnabled = true;
+    }
+
+    private void DisablePlayer()
+    {
+        movementEnabled = false;
     }
 
     private void OnDrawGizmos()
