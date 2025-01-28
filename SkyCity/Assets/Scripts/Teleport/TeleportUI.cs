@@ -13,7 +13,7 @@ public class TeleportUI : MonoBehaviour
     private InputAction openUI;
 
     [Header("UI")]
-    [SerializeField] private Transform[] points;
+    [SerializeField] private Transform pointsParent;
     [Space]
     [SerializeField] private Transform buttonArea;
     [SerializeField] private GameObject buttonPrefab;
@@ -50,7 +50,7 @@ public class TeleportUI : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        foreach(Transform tf in points)
+        foreach(Transform child in pointsParent.transform)
         {
             GameObject button = Instantiate(buttonPrefab, buttonArea);
             Debug.Log($"Button is here: {button.transform.position}");
@@ -61,7 +61,7 @@ public class TeleportUI : MonoBehaviour
 
             if(tp == null ) { continue; }
 
-            tp.Setup(tf, target);
+            tp.Setup(child, target);
         }
     }
 
